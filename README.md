@@ -1,6 +1,15 @@
 frontend-nanodegree-arcade-game
 ===============================
 
-Students should use this rubric: https://www.udacity.com/course/viewer#!/c-ud015/l-3072058665/m-3072588797
+Game must be run on the web server to have sound support. 
+You can check the demo at: http://apps.krevh.com/frogger/
+When game is started, you are presented with a simple game menu
+with two options:
+START
+RESUME
 
-for self-checking their submission.
+The only difference between them is that RESUME does not reset your score.
+
+Goal of the game is to reach the water, without the bugs getting you. 
+When you reach the water, you win 2 points. When bugs get you, you loose a point.
+Good luck!
