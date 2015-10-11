@@ -1,6 +1,10 @@
+"use strict";
 // GAME SETUP
 var BUG_WIDTH = 101;
 var BUG_HEIGHT = 171;
+var BUG_MIN_SPEED = 150;
+var BUG_VARIABLE_SPEED = 300;
+var BUG_START_POSITION = -300;
 var PLAYER_WIDTH = 101;
 var PLAYER_HEIGHT = 171;
 var TILE_STEP_X = 101;
@@ -14,20 +18,40 @@ var DISPLAY_COLLISION_BOUNDS = false;
 var SCORE_PLAYER_GOAL_REACHED = 2;
 var SCORE_PLAYER_CAUGHT = -1;
 
-// Enemies our player must avoid. Lane is between 1-3
-var Enemy = function(lane) {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
+/**
+ * Superclass to Enemy and Player, holds position information
+ * @param startX
+ * @param startY
+ * @constructor
+ */
+var MovingObject = function(startX, startY) {
+    this.x = startX;
+    this.y = startY;
+}
 
+
+/**
+ * Enemies our player must avoid.
+ * @param lane, is a value between 1 and 3
+ * @constructor
+ */
+var Enemy = function(lane) {
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
+    MovingObject.call(this, BUG_START_POSITION, lane*TILE_STEP_Y - 20);
     this.sprite = 'images/enemy-bug.png';
-    this.y = lane*TILE_STEP_Y - 20;
     this.reset();
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
+// Inherit from MovingObject
+Enemy.prototype = Object.create(MovingObject.prototype);
+Enemy.prototype.constructor = Enemy;
+
+
+/**
+ * Update the enemy's position, required method for game
+ * @param dt, a time delta between ticks
+ */
 Enemy.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
@@ -37,13 +61,17 @@ Enemy.prototype.update = function(dt) {
         this.reset();
 };
 
-// Initialize or reset the bug once its off the screen
+/**
+ * Initialize or reset the bug once its off the screen
+ */
 Enemy.prototype.reset = function() {
-    this.x = -300;
-    this.speed = 150 + Math.random() * 300;
+    this.x = BUG_START_POSITION;
+    this.speed = BUG_MIN_SPEED + Math.random() * BUG_VARIABLE_SPEED;
 }
 
-// Draw the enemy on the screen, required method for game
+/**
+ * Draw the enemy on the screen, required method for game
+ */
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
     if (DISPLAY_COLLISION_BOUNDS) {
@@ -53,7 +81,10 @@ Enemy.prototype.render = function() {
     }
 };
 
-// Returns bounds for checking of collision
+/**
+ * Returns bounds for checking of collision with the player
+ * @returns {{left: (number|*), top: *, right: *, bottom: number}}
+ */
 Enemy.prototype.getCollisionBounds = function() {
     return {
         left: this.x,
@@ -63,28 +94,26 @@ Enemy.prototype.getCollisionBounds = function() {
     };
 };
 
-// Returns true if there is a collision with a player
+/**
+ * Returns true if there is a collision with a player
+ * @param player
+ * @returns {boolean}
+ */
 Enemy.prototype.collidedWith = function(player) {
-    return intersectRect(
-        player.getCollisionBounds(),
-        this.getCollisionBounds()
-    );
+    var playerBounds = player.getCollisionBounds();
+    var enemyBounds = this.getCollisionBounds();
+    return (playerBounds.left <= enemyBounds.right &&
+            enemyBounds.left <= playerBounds.right &&
+            playerBounds.top <= enemyBounds.bottom &&
+            enemyBounds.top <= playerBounds.bottom);
 };
 
-// Utility function to check for collision between two boxes
-function intersectRect(a, b) {
-    return (a.left <= b.right &&
-            b.left <= a.right &&
-            a.top <= b.bottom &&
-            b.top <= a.bottom);
-}
-
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+/**
+ * Player class
+ * @constructor
+ */
 var Player = function() {
-    this.x = PLAYER_INITIAL_POSITION_X;   // setup initial position
-    this.y = PLAYER_INITIAL_POSITION_Y;
+    MovingObject.call(this, PLAYER_INITIAL_POSITION_X, PLAYER_INITIAL_POSITION_Y);
     this.moveX = 0;
     this.moveY = 0;
     this.sprite = 'images/char-boy.png';
@@ -92,7 +121,14 @@ var Player = function() {
     this.displayScore();
 }
 
-// Reset the player back to initial position
+// Inherit from MovingObject
+Player.prototype = Object.create(MovingObject.prototype);
+Player.prototype.constructor = Player;
+
+
+/**
+ * Reset the player back to initial position
+ */
 Player.prototype.reset = function() {
     this.x = PLAYER_INITIAL_POSITION_X;
     this.y = PLAYER_INITIAL_POSITION_Y;
@@ -100,19 +136,25 @@ Player.prototype.reset = function() {
     this.moveY = 0;
 }
 
-// Reset the score
+/**
+ * Reset the score
+ */
 Player.prototype.resetScore = function() {
     this.updateScore(-this.score);  // set back to 0 and update display
 }
 
-// Process collision with the bug
+/**
+ * Process collision with the bug
+ */
 Player.prototype.handleCollision = function() {
     ion.sound.play("metal_plate_2");
     this.reset();
     this.updateScore(SCORE_PLAYER_CAUGHT);
 }
 
-// Draw the enemy on the screen, required method for game
+/**
+ * Draw the enemy on the screen, required method for game
+ */
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x*TILE_STEP_X, this.y*TILE_STEP_Y + TILE_Y_OFFSET);
     if (DISPLAY_COLLISION_BOUNDS) {
@@ -122,7 +164,10 @@ Player.prototype.render = function() {
     }
 };
 
-// Get bounds for checking if collision occurred
+/**
+ * Get bounds for checking if collision occurred
+ * @returns {{left: number, top: number, right: number, bottom: number}}
+ */
 Player.prototype.getCollisionBounds = function() {
     return {
             left: this.x*TILE_STEP_X + 30,
@@ -132,8 +177,10 @@ Player.prototype.getCollisionBounds = function() {
         };
 };
 
-// Update the player's position, required method for game
-// Parameter: dt, a time delta between ticks
+
+/**
+ * Update the player's position, required method for game
+ */
 Player.prototype.update = function() {
     this.x += this.moveX;
     this.y += this.moveY;
@@ -152,14 +199,19 @@ Player.prototype.update = function() {
     this.moveY = 0;
 }
 
-// Player reached the water
+/**
+ * Player reached the water
+ */
 Player.prototype.win = function() {
     ion.sound.play("water_droplet_2");
     this.reset();
     this.updateScore(SCORE_PLAYER_GOAL_REACHED);
 }
 
-// Update the current score
+/**
+ * Update the current score
+ * @param score
+ */
 Player.prototype.updateScore = function(score) {
     this.score += score;
     if (this.score < 0)
@@ -167,13 +219,18 @@ Player.prototype.updateScore = function(score) {
     this.displayScore();
 }
 
-// Display the score
+/**
+ * Display the score
+ * @param score
+ */
 Player.prototype.displayScore = function(score) {
     $('#score').text("Score: "+this.score);
 }
 
-// Handle input from user
-// Parameter: input,
+/**
+ * Handle input from user
+ * @param input
+ */
 Player.prototype.handleInput = function(input) {
     if (input == 'up')
         this.moveY -= 1;
@@ -189,7 +246,6 @@ Player.prototype.handleInput = function(input) {
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
-
 var allEnemies =
     [
         new Enemy(1),
@@ -223,30 +279,3 @@ document.addEventListener('keyup', function(e) {
     player.handleInput(allowedKeys[e.keyCode]);
 });
 
-// GUI and SOUND related functions
-// HIDE game screen at startup
-$('#gameScreen').hide();
-$('#splashScreen input').click(function() {
-    $("#splashScreen").hide();
-    $("#gameScreen").show();
-});
-
-// Reset score on start button
-$('#startButton').click(function() {
-    player.resetScore();
-});
-
-// initialize sounds
-ion.sound({
-    sounds: [
-        {name: "branch_break"},
-        {name: "metal_plate_2"},
-        {name: "water_droplet_2"}
-    ],
-
-    // main config
-    path: "sounds/",
-    preload: true,
-    multiplay: true,
-    volume: 0.9
-});
