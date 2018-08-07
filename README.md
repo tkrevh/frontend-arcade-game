@@ -3,7 +3,7 @@ frontend-nanodegree-arcade-game
 
 Double click on index.hml to play the game.
 If you would like to have sound effects which require a web server, please visit the
-demo at: http://tkrevh.github.io/frontend-nanodegree-arcade-game/
+demo at: http://tkrevh.github.io/frontend-arcade-game/
 
 When the game is started, you are presented with a simple game menu with two options: START and RESUME
 Click on START to start playing the game.
